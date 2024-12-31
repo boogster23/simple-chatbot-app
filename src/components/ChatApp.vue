@@ -27,18 +27,23 @@ import ChatMessage from './ChatMessage.vue'
 import ChatInput from './ChatInput.vue'
 import io from 'socket.io-client'
 
+interface Attachment {
+    type: string;
+    name: string;
+    content?: string; // Base64 encoded content
+}
+
 interface Message {
     text: string;
-    attachments?: Array<{
-        type: 'document' | 'image'
-        name: string
-    }>;
-    isUser: boolean
+    attachments?: Attachment[];
+    isUser: boolean;
 }
 
 const messages = ref<Message[]>([])
 const selectedModel = ref('gemini')
 console.log(`import.meta.env.VITE_API_URL: ${import.meta.env.VITE_API_URL}`)
+
+
 const socket = io(import.meta.env.VITE_API_URL)
 
 const aiModels = [
@@ -54,8 +59,6 @@ onMounted(() => {
     const updateSocketListener = () => {
         const selectedModelObj = aiModels.find(model => model.value === selectedModel.value)
         if (selectedModelObj) {
-            console.log(`updateSocketListener socket: ${selectedModelObj.provider}`)
-
             socket.off('gemini-message')
             socket.off('claude-message')
             socket.off('openai-message')
@@ -86,27 +89,43 @@ onMounted(() => {
     });
 });
 
-const handleSend = (text: string, files: File[]) => {
-    const attachments = files.map(file => ({
-        type: file.type.startsWith('image/') ? 'image' : 'document',
-        name: file.name
-    } as const));
+const handleSend = async (text: string, files: File[]) => {
+    const attachments = await Promise.all(files.map(async file => {
+        const base64Content = await fileToBase64(file);
+        return {
+            type: file.type,
+            name: file.name,
+            content: base64Content
+        };
+    }));
 
-    if (text.trim() !== '') {
-
+    if (text.trim() !== '' || attachments) {
         messages.value.push({
             text,
-            attachments,
+            attachments: attachments.map(({ type, name }) => ({ type, name })),
             isUser: true
         });
 
         const selectedModelObj = aiModels.find(model => model.value === selectedModel.value)
 
-        if (selectedModelObj) {
-            console.log(`selectedModelObj.provider: ${selectedModelObj.provider}`)
-            socket.emit(selectedModelObj.provider, text)
-        }
+        if (selectedModelObj)
+            socket.emit(selectedModelObj.provider, { text, attachments })
     }
+}
 
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            if (typeof reader.result === 'string') {
+                const base64Content = reader.result.split(',')[1];
+                resolve(base64Content);
+            } else {
+                reject(new Error('Failed to read file as base64'));
+            }
+        };
+        reader.onerror = error => reject(error);
+    })
 }
 </script>

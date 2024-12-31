@@ -18,21 +18,46 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type'],
   },
-});
+  maxHttpBufferSize: 20 * 1024 * 1024,
+  pingTimeout: 120000,
+  pingInterval: 60000
+})
+
+const processAttachments = (attachments) => {
+  if (!attachments || attachments.length === 0) {
+    return null;
+  }
+  return attachments.map(att => {
+    if (!att || !att.content) {
+      console.error('Invalid attachment:', att);
+      return null;
+    }
+    return {
+      ...att,
+      content: Buffer.from(att.content, 'base64')
+    };
+  }).filter(Boolean); // Remove any null entries
+}
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id)
 
-  socket.on('gemini-message', async (message) => {
-    await generateGeminiContent(message, socket)
+  socket.on('gemini-message', async (data) => {
+    const { text, attachments } = data
+    const processedAttachments = processAttachments(attachments)
+    await generateGeminiContent(text, socket, processedAttachments)
   });
 
-  socket.on('claude-message', async (message) => {
-    await generateClaudeContent(message, socket)
+  socket.on('claude-message', async (data) => {
+    const { text, attachments } = data
+    const processedAttachments = processAttachments(attachments)
+    await generateClaudeContent(text, socket, processedAttachments)
   });
 
-  socket.on('perplexity-message', async (message) => {
-    await generatePerplexityContent(message, socket)
+  socket.on('perplexity-message', async (data) => {
+    const { text, attachments } = data
+    const processedAttachments = processAttachments(attachments)
+    await generatePerplexityContent(text, socket, processedAttachments)
   });
 
   socket.on('disconnect', () => {
