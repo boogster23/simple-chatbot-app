@@ -40,6 +40,6 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(3003, () => {
+server.listen(process.env.API_PORT, () => {
   console.log('Server listening on port 3003')
 });
