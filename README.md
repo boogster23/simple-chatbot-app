@@ -43,7 +43,7 @@ For full functionality, make sure both the Node.js server and the Vue.js fronten
 
 ## Additional Information
 
-- This project was bootstrapped using [Bolt](https://bolt.new), a tool for quickly creating Vue 3 applications.
+- This project was bootstrapped using [Bolt](https://bolt.new), a tool for quickly creating front-end applications.
 - The frontend is built with Vue 3 and uses Vite as the build tool.
 
 ## Customize configuration
