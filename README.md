@@ -1,6 +1,6 @@
 # simple-chatbot-app
 
-A Vue 3 chatbot application that integrates with differently AI Models.
+A Vue 3 chatbot application that integrates with different AI Models.
 Currently supports Gemini and Claude AI models.
 Open AI and Perplexity coming soon...
 
