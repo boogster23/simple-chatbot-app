@@ -36,7 +36,7 @@ npm start
 ### Run the Vue.js frontend
 Start the development server with hot-reload:
 ```
-npm run serve
+npm run dev
 ```
 
 For full functionality, make sure both the Node.js server and the Vue.js frontend are running simultaneously.
