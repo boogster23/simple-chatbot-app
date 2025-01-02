@@ -1,9 +1,9 @@
 # simple-chatbot-app
 
-A Vue 3 chatbot application that integrates with different AI Models using direct API url calls.  
-Currently supports Gemini and Claude AI models.  
+A Vue 3 chatbot application that integrates with different AI Models using direct API url calls except for OpenAI.  
+Currently supports OpenAI, Gemini, Perplexity and Claude AI models.  
 
-Open AI and Perplexity coming soon...
+Attachment support for OpenAI and Perplexity is still in progress... 
 
 ## Project setup
 
@@ -25,7 +25,9 @@ CLAUDE_API_KEY=your_claude_api_key_here
 VITE_API_URL='http://localhost:3003' #port number you set up for API_PORT
 ```
 
-- To obtain a Gemini API key, visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+- For OpenAI API Key, visit [OpenAI](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key)
+- For Perplexity API Key, visit [Perplexity AI](https://www.perplexity.ai/hub/faq/pplx-api)
+- For Gemini API key, visit [Google AI Studio](https://makersuite.google.com/app/apikey)
 - For Claude API key, sign up at [Anthropic](https://www.anthropic.com) or [Claude AI](https://claude.ai)
 
 ### Start the Node.js server
