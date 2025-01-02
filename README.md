@@ -18,8 +18,10 @@ Create a `.env` file in the root directory and add the following:
 ```
 # NODE API Variables
 API_PORT=3003 #or whatever port number you want
+OPENAI_API_KEY=your_openai_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 CLAUDE_API_KEY=your_claude_api_key_here
+PERPLEXITY_API_KEY=your_perplexity_api_key_here
 
 # VUE Front-end Variables
 VITE_API_URL='http://localhost:3003' #port number you set up for API_PORT
