@@ -48,10 +48,9 @@ const socket = io(import.meta.env.VITE_API_URL)
 
 const aiModels = [
     { value: 'gemini', label: 'Gemini 1.5 Flash', provider: 'gemini-message' },
-    // open ai in progress
-    // { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', provider: 'openai-message' },
-    // { value: 'gpt-4', label: 'GPT-4', provider: 'openai-message' },
+    { value: 'gpt-4', label: 'GPT-4', provider: 'openai-message' },
     { value: 'claude-2', label: 'Claude 2', provider: 'claude-message' },
+    { value: 'perplexity', label: 'Perplexity AI', provider: 'perplexity-message' },
 ];
 
 onMounted(() => {

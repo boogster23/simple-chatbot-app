@@ -1,79 +1,118 @@
-import fetch, { Headers } from 'node-fetch';
-import dotenv from 'dotenv';
-dotenv.config();  
+import fetch from 'node-fetch'
+import dotenv from 'dotenv'
 
-const perplexityApiKey = process.env.PERPLEXITY_API_KEY;
+dotenv.config()
 
-const geminiModels = {
-  geminiFlash: { model: 'gemini-1.5-flash', temperature: 0.6 },
-};
+const ERROR_DEFAULT = 'Sorry, I am unable to process your request right now. Please try again later.'
+const perplexityApiKey = process.env.PERPLEXITY_API_KEY
+const perplexityMaxTokens = 1024
 
-const streamGenerateContent = async (prompt, socket, filePaths) => {
-  const model = geminiModels.geminiFlash; 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model.model}:streamGenerateContent?alt=sse&key=${perplexityApiKey}`;
+const perplexityApiModels = {
+    llamasmall: { model: 'llama-3.1-sonar-small-128k-online' },
+    llamalarge: { model: 'llama-3.1-sonar-large-128k-online' },
+    llamahuge: { model: 'llama-3.1-sonar-huge-128k-online' }
+}
 
-  const headers = new Headers({
-      'Content-Type': 'application/json',
-  });
+const streamGenerateContent = async (message, socket, attachments) => {
+    const url = 'https://api.perplexity.ai/chat/completions'
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${perplexityApiKey}`
+    }
 
-  const data = {
-      contents: [
-          {
-              parts: [
-                  { text: prompt }
-              ]
-          }
-      ],
-      generationConfig: {
-        temperature: 0.6, // 0.2-0.5 more focused and predictable response, higher generates more diverse and creative outputs
-        topK: 4,
-        topP: 0.8,
-        maxOutputTokens: 8192, // the higher the value the longer the response
-        responseMimeType: "text/plain"
-      }
-  };
+    const messages = [{ role: 'user', content: message }]
 
-  try {
-      const response = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`API request failed with status ${response.status}: ${errorText}`);
-      }
-
-        // Listen for the streamed data chunks
-      response.body.on('data', (chunk) => {
-          const chunkText = chunk.toString();
-          console.log('Chunk received:', chunkText);
-
-          if (chunkText.startsWith('data: ')) {
-            const jsonData = chunkText.replace('data: ', '');
-            try {
-                const parsedData = JSON.parse(jsonData);
-                // Extract the actual content you want to emit
-                const content = parsedData.candidates[0].content.parts[0].text;
-                socket.emit('perplexity-message', formatText(content));
-            } catch (error) {
-                console.error('Failed to parse chunk:', error);
+    if (attachments && attachments.length > 0) {
+        for (const attachment of attachments) {
+            if (attachment.type.startsWith('image/')) {
+                messages.push({
+                    role: 'user',
+                    content: [{
+                        type: 'image',
+                        image_url: {
+                            url: `data:${attachment.type};base64,${attachment.content.toString('base64')}`
+                        }
+                    }]
+                })
+            } else {
+                // For non-image files, we'll add them as text
+                messages.push({
+                    role: 'user',
+                    content: `File content (${attachment.type}):\n${attachment.content.toString('utf-8')}`
+                })
             }
-          }
-      });
+        }
+    }
 
-      response.body.on('end', () => {
-          console.log('Stream finished.');
-          socket.emit('ai-response-end', 'Stream finished.');
-      });
-  } catch (error) {
-      console.error('Error:', error.message || error);
-  }
+    const data = {
+        model: perplexityApiModels.llamasmall.model,
+        messages,
+        max_tokens: perplexityMaxTokens,
+        stream: true
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(data)
+        })
+
+        if (!response.ok) {
+            const errorText = await response.text()
+            console.error(`API response: ${errorText}`)
+            throw new Error(`API request failed with status ${response.status}`)
+        }
+
+        let buffer = ''
+        response.body.on('data', (chunk) => {
+            buffer += chunk.toString()
+            const lines = buffer.split('\n')
+            buffer = lines.pop()
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const jsonData = line.slice(5).trim()
+                    if (jsonData === '[DONE]') return
+
+                    try {
+                        const parsedData = JSON.parse(jsonData)
+                        if (parsedData.choices && parsedData.choices[0].delta && parsedData.choices[0].delta.content) {
+                            const content = parsedData.choices[0].delta.content
+                            socket.emit('perplexity-message', formatText(content))
+                        }
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e)
+                    }
+                }
+            }
+        })
+
+        response.body.on('end', () => {
+            if (buffer) {
+                const jsonData = buffer.trim()
+                if (jsonData && jsonData !== '[DONE]') {
+                    try {
+                        const parsedData = JSON.parse(jsonData)
+                        if (parsedData.choices && parsedData.choices[0].delta && parsedData.choices[0].delta.content) {
+                            const content = parsedData.choices[0].delta.content
+                            socket.emit('perplexity-message', formatText(content))
+                        }
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e)
+                    }
+                }
+            }
+            socket.emit('ai-response-end', 'Stream finished.')
+        })
+    } catch (error) {
+        console.error('Error generating Perplexity AI response:', error)
+        socket.emit('perplexity-message', ERROR_DEFAULT)
+    }
 }
 
 const formatText = (text) => {
-  return text.replace(/\n/g, '<br />');
+    return text.replace(/\n/g, '<br />')
 }
 
-export { streamGenerateContent };
+export { streamGenerateContent }

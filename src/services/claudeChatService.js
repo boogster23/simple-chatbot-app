@@ -5,7 +5,7 @@ dotenv.config();
 const ERROR_DEFAULT = 'Sorry, I am unable to process your request right now. Please try again later.'
 const claudeApiKey = process.env.CLAUDE_API_KEY
 const claudeMaxTokens = 1024
-const clauseAnthropicVersion = '2023-06-01'
+const claudeAnthropicVersion = '2023-06-01'
 
 const claudeApiModels = {
     claudeSonnet: { model: 'claude-3-5-sonnet-latest' },
@@ -13,12 +13,11 @@ const claudeApiModels = {
 }
 
 const streamGenerateContent = async (message, socket, attachments) => {
-
     const url = `https://api.anthropic.com/v1/messages`
     const headers = new Headers({
         'Content-Type': 'application/json',
         'x-api-key': claudeApiKey,
-        'anthropic-version': clauseAnthropicVersion,
+        'anthropic-version': claudeAnthropicVersion,
     });
 
     const messages = [{

@@ -4,6 +4,7 @@ import { Server } from 'socket.io'
 import dotenv from 'dotenv'
 import { streamGenerateContent as generateGeminiContent } from './src/services/geminiService.js'
 import { streamGenerateContent as generateClaudeContent } from './src/services/claudeChatService.js'
+import { streamGenerateContent as generateOpenAIContent } from './src/services/openAIService.js'
 import { streamGenerateContent as generatePerplexityContent } from './src/services/perplexityService.js'
 
 // Load environment variables from .env file
@@ -52,6 +53,12 @@ io.on('connection', (socket) => {
     const { text, attachments } = data
     const processedAttachments = processAttachments(attachments)
     await generateClaudeContent(text, socket, processedAttachments)
+  });
+
+  socket.on('openai-message', async (data) => {
+    const { text, attachments } = data
+    const processedAttachments = processAttachments(attachments)
+    await generateOpenAIContent(text, socket, processedAttachments)
   });
 
   socket.on('perplexity-message', async (data) => {
