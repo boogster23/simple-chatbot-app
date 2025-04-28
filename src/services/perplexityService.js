@@ -10,7 +10,8 @@ const perplexityMaxTokens = 1024
 const perplexityApiModels = {
     llamasmall: { model: 'llama-3.1-sonar-small-128k-online' },
     llamalarge: { model: 'llama-3.1-sonar-large-128k-online' },
-    llamahuge: { model: 'llama-3.1-sonar-huge-128k-online' }
+    llamahuge: { model: 'llama-3.1-sonar-huge-128k-online' },
+    sonarpro: { model: 'sonar-pro '},
 }
 
 const streamGenerateContent = async (message, socket, attachments) => {
@@ -45,7 +46,7 @@ const streamGenerateContent = async (message, socket, attachments) => {
     }
 
     const data = {
-        model: perplexityApiModels.llamasmall.model,
+        model: perplexityApiModels.sonarpro.model,
         messages,
         max_tokens: perplexityMaxTokens,
         stream: true
